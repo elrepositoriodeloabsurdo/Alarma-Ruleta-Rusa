@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>☠️ RULETA RUSA ALARM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@700&family=Roboto+Condensed:wght@400;700&display=swap');
+
+  :root {
+    --red: #FF0000;
+    --red-dark: #8B0000;
+    --red-glow: rgba(255,0,0,0.4);
+    --amber: #FF6B00;
+    --green: #00FF41;
+    --bg: #0A0A0A;
+    --surface: #111111;
+    --surface2: #1A1A1A;
+    --text: #EEEEEE;
+    --muted: #666;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Oswald', sans-serif;
+    --body: 'Roboto Condensed', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCANLINES OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── HEADER ── */
+  .header {
+    background: #0D0D0D;
+    border-bottom: 2px solid var(--red);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo {
+    font-family: var(--display);
+    font-size: 18px;
+    color: var(--red);
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--red-glow);
+  }
+  .header-logo span { color: var(--text); }
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse-red 1s infinite;
+    box-shadow: 0 0 8px var(--red);
+  }
+  .header-right { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* ── HOME SCREEN ── */
+  #screen-home {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .hero-bomb {
+    background: radial-gradient(ellipse at center, #1a0000 0%, #0A0A0A 70%);
+    padding: 40px 20px 30px;
+    text-align: center;
+    border-bottom: 1px solid #2a0000;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bomb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,0,0,0.05), transparent);
+    pointer-events: none;
+  }
+
+  .bomb-icon {
+    font-size: 64px;
+    display: block;
+    animation: bomb-tick 1s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255,100,0,0.5));
+    margin-bottom: 16px;
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: 32px;
+    color: var(--red);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px var(--red-glow), 0 0 40px rgba(255,0,0,0.2);
+    line-height: 1.1;
+  }
+  .hero-subtitle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    margin-top: 8px;
+    letter-spacing: 2px;
+  }
+
+  .prob-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    background: #0D0000;
+    border: 1px solid #3a0000;
+    border-radius: 4px;
+    padding: 12px 20px;
+    margin-top: 20px;
+  }
+  .bullet { font-size: 20px; }
+  .bullet.live { filter: drop-shadow(0 0 6px var(--red)); }
+  .prob-text { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: left; }
+  .prob-text strong { color: var(--red); font-size: 14px; display: block; }
+
+  /* ── ALARM CONFIG ── */
+  .config-section {
+    padding: 24px 20px;
+    flex: 1;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #2a0000;
+  }
+
+  .time-picker-container {
+    background: var(--surface);
+    border: 1px solid #2a0000;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .time-display {
+    font-family: var(--mono);
+    font-size: 56px;
+    color: var(--red);
+    text-shadow: 0 0 20px var(--red-glow);
+    letter-spacing: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+  .time-display::after {
+    content: 'TAP PARA EDITAR';
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
+  input[type="time"] {
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 56px;
+    color: var(--red);
+    text-shadow: 0 0 20px var(--red-glow);
+    letter-spacing: 4px;
+    width: 100%;
+    text-align: center;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(330deg);
+    cursor: pointer;
+  }
+
+  .next-alarm-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 20px;
+  }
+  .next-alarm-label span { color: var(--amber); }
+
+  /* ── THREAT CONFIG ── */
+  .threat-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .threat-card {
+    background: var(--surface);
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .threat-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .threat-card.selected {
+    border-color: var(--red);
+    background: #0D0000;
+  }
+  .threat-card.selected::before { background: var(--red); }
+  .threat-card.selected .threat-name { color: var(--red); }
+
+  .threat-icon { font-size: 24px; }
+  .threat-info { flex: 1; }
+  .threat-name { font-family: var(--display); font-size: 14px; color: var(--text); letter-spacing: 1px; }
+  .threat-desc { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .threat-check {
+    width: 20px; height: 20px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+  .threat-card.selected .threat-check {
+    background: var(--red);
+    border-color: var(--red);
+  }
+
+  /* ── INPUTS ── */
+  .input-group {
+    margin-bottom: 12px;
+  }
+  .input-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .input-field {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--red); }
+  .input-field::placeholder { color: #444; }
+
+  /* ── BUTTONS ── */
+  .btn-arm {
+    width: 100%;
+    background: var(--red);
+    border: none;
+    border-radius: 6px;
+    padding: 18px;
+    font-family: var(--display);
+    font-size: 20px;
+    color: #fff;
+    letter-spacing: 3px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    box-shadow: 0 0 20px rgba(255,0,0,0.3), 0 4px 15px rgba(0,0,0,0.5);
+  }
+  .btn-arm::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    transform: scale(0);
+    transition: transform 0.4s;
+  }
+  .btn-arm:active::before { transform: scale(1); }
+  .btn-arm:active { transform: scale(0.98); }
+
+  .warning-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: #444;
+    text-align: center;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+  .warning-text strong { color: var(--red); }
+
+  /* ── ARMED SCREEN ── */
+  #screen-armed {
+    background: #050005;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 20px;
+    position: relative;
+  }
+
+  .armed-ring {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 3px solid #2a0000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px;
+    position: relative;
+  }
+  .armed-ring::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,0,0,0.1);
+    animation: rotate-ring 8s linear infinite;
+  }
+  .armed-ring::after {
+    content: '';
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,0,0,0.05);
+    animation: rotate-ring 12s linear infinite reverse;
+  }
+
+  .armed-countdown {
+    font-family: var(--mono);
+    font-size: 44px;
+    color: var(--red);
+    text-shadow: 0 0 30px var(--red-glow);
+    letter-spacing: 2px;
+    animation: countdown-pulse 1s ease-in-out infinite;
+  }
+
+  .armed-title {
+    font-family: var(--display);
+    font-size: 24px;
+    color: var(--red);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .armed-subtitle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 30px;
+    line-height: 1.6;
+  }
+  .armed-subtitle strong { color: var(--amber); }
+
+  .threat-summary {
+    background: #0D0000;
+    border: 1px solid #2a0000;
+    border-radius: 6px;
+    padding: 16px;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto 30px;
+    text-align: left;
+  }
+  .threat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #1a0000;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .threat-row:last-child { border-bottom: none; }
+  .threat-row-label { color: var(--muted); }
+  .threat-row-value { color: var(--text); }
+  .threat-row-value.danger { color: var(--red); }
+  .threat-row-value.safe { color: var(--green); }
+
+  .btn-disarm {
+    width: 100%;
+    max-width: 320px;
+    background: transparent;
+    border: 2px solid #333;
+    border-radius: 6px;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .btn-disarm:hover { border-color: #666; color: var(--text); }
+
+  /* ── ALARM FIRING SCREEN ── */
+  #screen-alarm {
+    background: #0A0000;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #screen-alarm::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255,0,0,0.15) 0%, transparent 70%);
+    animation: alarm-pulse-bg 0.5s ease-in-out infinite;
+  }
+
+  .alarm-time-display {
+    font-family: var(--mono);
+    font-size: 72px;
+    color: var(--red);
+    text-shadow: 0 0 40px var(--red), 0 0 80px rgba(255,0,0,0.5);
+    animation: alarm-blink 0.5s step-end infinite;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .alarm-warning {
+    font-family: var(--display);
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .alarm-threat-msg {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 30px;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── PUZZLE ── */
+  .puzzle-container {
+    background: rgba(0,0,0,0.8);
+    border: 2px solid var(--red);
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 320px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 30px rgba(255,0,0,0.3);
+  }
+
+  .puzzle-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .math-problem {
+    font-family: var(--mono);
+    font-size: 28px;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 16px;
+    background: #0a0a0a;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #222;
+    letter-spacing: 2px;
+  }
+
+  .puzzle-input {
+    width: 100%;
+    background: #0a0a0a;
+    border: 2px solid #333;
+    border-radius: 4px;
+    padding: 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 20px;
+    text-align: center;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .puzzle-input:focus { border-color: var(--amber); }
+  .puzzle-input.error { border-color: var(--red); animation: shake 0.3s; }
+  .puzzle-input.success { border-color: var(--green); }
+
+  .btn-solve {
+    width: 100%;
+    background: #006600;
+    border: none;
+    border-radius: 4px;
+    padding: 14px;
+    font-family: var(--display);
+    font-size: 16px;
+    color: var(--green);
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    box-shadow: 0 0 15px rgba(0,255,65,0.2);
+  }
+  .btn-solve:hover { background: #008800; }
+  .btn-solve:active { transform: scale(0.98); }
+
+  .puzzle-timer {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    text-align: center;
+    margin-top: 10px;
+    animation: blink-text 1s step-end infinite;
+  }
+
+  /* ── RESULT SCREENS ── */
+  #screen-survived, #screen-dead {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  #screen-survived {
+    background: radial-gradient(ellipse at center, #001a00 0%, #050505 70%);
+  }
+
+  #screen-dead {
+    background: radial-gradient(ellipse at center, #1a0000 0%, #050505 70%);
+  }
+
+  .result-icon { font-size: 80px; display: block; margin-bottom: 20px; }
+  .result-title {
+    font-family: var(--display);
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+  }
+  #screen-survived .result-title { color: var(--green); text-shadow: 0 0 20px rgba(0,255,65,0.4); }
+  #screen-dead .result-title { color: var(--red); text-shadow: 0 0 20px var(--red-glow); }
+
+  .result-msg {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 300px;
+    line-height: 1.8;
+    margin-bottom: 30px;
+  }
+  .result-msg strong { color: var(--text); }
+
+  .consequence-box {
+    background: #0D0000;
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    padding: 16px;
+    max-width: 320px;
+    width: 100%;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .consequence-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .consequence-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    line-height: 1.6;
+  }
+
+  .btn-reset {
+    background: transparent;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px 30px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .btn-reset:hover { border-color: #666; color: var(--text); }
+
+  /* ── ROULETTE ANIMATION SCREEN ── */
+  #screen-roulette {
+    background: #050000;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .revolver-display {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 3px solid var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px;
+    font-size: 60px;
+    box-shadow: 0 0 40px var(--red-glow);
+    animation: spin-gun 0.3s linear infinite;
+    position: relative;
+  }
+
+  .roulette-msg {
+    font-family: var(--display);
+    font-size: 24px;
+    color: var(--red);
+    letter-spacing: 3px;
+    animation: alarm-blink 0.3s step-end infinite;
+    margin-bottom: 16px;
+  }
+
+  .roulette-sub {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── LUCK ROLL SCREEN ── */
+  .dice-display {
+    font-size: 80px;
+    display: block;
+    animation: dice-roll 0.2s linear infinite;
+    margin-bottom: 20px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes pulse-red {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  @keyframes bomb-tick {
+    0%, 100% { transform: rotate(-3deg) scale(1); }
+    50% { transform: rotate(3deg) scale(1.05); }
+  }
+
+  @keyframes countdown-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes rotate-ring {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes alarm-pulse-bg {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes alarm-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes blink-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  @keyframes spin-gun {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes dice-roll {
+    0% { content: '1'; }
+    16% { transform: rotate(60deg); }
+    33% { transform: rotate(120deg); }
+    50% { transform: rotate(180deg); }
+    66% { transform: rotate(240deg); }
+    83% { transform: rotate(300deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* ── PROGRESS BAR ── */
+  .threat-meter {
+    width: 100%;
+    height: 4px;
+    background: #1a0000;
+    border-radius: 2px;
+    margin-top: 20px;
+    overflow: hidden;
+  }
+  .threat-fill {
+    height: 100%;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red);
+    transition: width 1s linear;
+  }
+
+  /* ── BACKEND STATUS ── */
+  .api-status {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: #333;
+    z-index: 1000;
+    text-align: right;
+    line-height: 1.6;
+  }
+  .api-status.connected { color: #006600; }
+  .api-status.demo { color: #444; }
+
+  /* ── MOBILE OPTIMIZATIONS ── */
+  @media (max-width: 400px) {
+    .alarm-time-display { font-size: 56px; }
+    input[type="time"] { font-size: 44px; }
+    .time-display { font-size: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME SCREEN -->
+<div id="screen-home" class="screen active">
+  <div class="header">
+    <div class="header-logo">RULETA<span>RUSA</span></div>
+    <div class="header-right">
+      <div class="status-dot"></div>
+      ARMED SYSTEM
+    </div>
+  </div>
+
+  <div class="hero-bomb">
+    <span class="bomb-icon">💣</span>
+    <div class="hero-title">WAKE UP<br/>OR ELSE</div>
+    <div class="hero-subtitle">// ALARMA DE CONSECUENCIAS REALES //</div>
+
+    <div class="prob-display">
+      <span class="bullet live">🔴</span>
+      <span class="bullet">⚫</span>
+      <span class="bullet">⚫</span>
+      <span class="bullet">⚫</span>
+      <span class="bullet">⚫</span>
+      <span class="bullet">⚫</span>
+      <div class="prob-text">
+        <strong>1 en 6 posibilidades</strong>
+        de que tu vida cambie hoy
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section">
+
+    <!-- TIME PICKER -->
+    <div class="section-label">HORA DE ALARMA</div>
+    <div class="time-picker-container">
+      <input type="time" id="alarm-time" value="07:00"/>
+      <div class="next-alarm-label">Próxima ejecución: <span id="next-alarm-display">mañana a las 07:00</span></div>
+      <div class="threat-meter">
+        <div class="threat-fill" style="width: 0%" id="threat-fill"></div>
+      </div>
+    </div>
+
+    <!-- THREAT SELECTION -->
+    <div class="section-label">CONSECUENCIA</div>
+    <div class="threat-options">
+      <div class="threat-card selected" data-threat="email" onclick="selectThreat(this)">
+        <div class="threat-icon">📧</div>
+        <div class="threat-info">
+          <div class="threat-name">CORREO AL JEFE</div>
+          <div class="threat-desc">Envía "Renuncio" a tu empleador. Con tu nombre. Desde tu correo.</div>
+        </div>
+        <div class="threat-check">✓</div>
+      </div>
+      <div class="threat-card" data-threat="twitter" onclick="selectThreat(this)">
+        <div class="threat-icon">🐦</div>
+        <div class="threat-info">
+          <div class="threat-name">TWITTER NUCLEAR</div>
+          <div class="threat-desc">Publica tu historial de búsqueda en X. Todos lo van a ver.</div>
+        </div>
+        <div class="threat-check"></div>
+      </div>
+      <div class="threat-card" data-threat="both" onclick="selectThreat(this)">
+        <div class="threat-icon">☠️</div>
+        <div class="threat-info">
+          <div class="threat-name">MODO KAMIKAZE</div>
+          <div class="threat-desc">AMBOS. Para los que de verdad tienen problemas para despertar.</div>
+        </div>
+        <div class="threat-check"></div>
+      </div>
+    </div>
+
+    <!-- CONFIG FIELDS -->
+    <div id="email-config">
+      <div class="section-label">DATOS DE LA VÍCTIMA</div>
+      <div class="input-group">
+        <label class="input-label">TU NOMBRE COMPLETO</label>
+        <input class="input-field" id="user-name" placeholder="Juan Pérez Soto" type="text"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">EMAIL DEL JEFE</label>
+        <input class="input-field" id="boss-email" placeholder="jefe@empresa.cl" type="email"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">NOMBRE DEL JEFE</label>
+        <input class="input-field" id="boss-name" placeholder="Sr. García" type="text"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">EMPRESA</label>
+        <input class="input-field" id="company-name" placeholder="Empresa S.A." type="text"/>
+      </div>
+    </div>
+
+    <div id="twitter-config" style="display:none;">
+      <div class="section-label">HISTORIAL DE BÚSQUEDA</div>
+      <div class="input-group">
+        <label class="input-label">BÚSQUEDAS COMPROMETEDORAS (una por línea)</label>
+        <textarea class="input-field" id="search-history" rows="4"
+          placeholder="cómo fingir estar enfermo&#10;memes en horario laboral&#10;trabajo desde casa sin trabajar"
+          style="resize:none; line-height: 1.5;"></textarea>
+      </div>
+    </div>
+
+    <br/>
+
+    <button class="btn-arm" onclick="armAlarm()">
+      ⚠️ ARMAR LA BOMBA ⚠️
+    </button>
+
+    <div class="warning-text">
+      Al armar la alarma, aceptas que si no la desactivas a tiempo,<br/>
+      el servidor <strong>ejecutará la consecuencia sin advertencia.</strong><br/>
+      El backend no tiene botón de misericordia.
+    </div>
+
+  </div>
+</div>
+
+<!-- ARMED SCREEN -->
+<div id="screen-armed" class="screen">
+  <div class="header">
+    <div class="header-logo">RULETA<span>RUSA</span></div>
+    <div class="header-right">
+      <div class="status-dot"></div>
+      ARMADA
+    </div>
+  </div>
+
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 20px; text-align:center;">
+    <div class="armed-ring">
+      <div class="armed-countdown" id="armed-countdown">--:--:--</div>
+    </div>
+
+    <div class="armed-title">BOMBA ACTIVA</div>
+    <div class="armed-subtitle">
+      El servidor tiene el gatillo.<br/>
+      <strong>Si no te despiertas, lo ejecuta.</strong>
+    </div>
+
+    <div class="threat-summary">
+      <div class="threat-row">
+        <span class="threat-row-label">ALARMA</span>
+        <span class="threat-row-value danger" id="summary-alarm-time">—</span>
+      </div>
+      <div class="threat-row">
+        <span class="threat-row-label">GATILLO</span>
+        <span class="threat-row-value danger" id="summary-trigger-time">—</span>
+      </div>
+      <div class="threat-row">
+        <span class="threat-row-label">CONSECUENCIA</span>
+        <span class="threat-row-value danger" id="summary-threat">—</span>
+      </div>
+      <div class="threat-row">
+        <span class="threat-row-label">PROBABILIDAD</span>
+        <span class="threat-row-value danger">1 EN 6 (16.7%)</span>
+      </div>
+      <div class="threat-row">
+        <span class="threat-row-label">ESTADO</span>
+        <span class="threat-row-value safe">⚡ EN ESPERA</span>
+      </div>
+    </div>
+
+    <button class="btn-disarm" onclick="showDisarmConfirm()">
+      🛑 CANCELAR ALARMA (cobarde)
+    </button>
+  </div>
+</div>
+
+<!-- ALARM FIRING SCREEN -->
+<div id="screen-alarm" class="screen">
+  <div class="alarm-time-display" id="alarm-current-time">07:00</div>
+  <div class="alarm-warning">¡DESPIÉRTATE AHORA!</div>
+  <div class="alarm-threat-msg">
+    Tienes <span id="solve-timer">30</span> segundos para resolver el puzzle<br/>
+    o el servidor ejecuta la consecuencia
+  </div>
+
+  <div class="puzzle-container">
+    <div class="puzzle-title">// RESUELVE PARA SOBREVIVIR //</div>
+    <div class="math-problem" id="math-problem">? + ? = ?</div>
+    <input
+      class="puzzle-input"
+      id="puzzle-answer"
+      type="number"
+      placeholder="?"
+      inputmode="numeric"
+      oninput="checkAnswer()"
+    />
+    <button class="btn-solve" onclick="checkAnswer()">
+      ✓ CONFIRMAR RESPUESTA
+    </button>
+    <div class="puzzle-timer" id="puzzle-timer">⚠ 30 SEGUNDOS RESTANTES</div>
+  </div>
+</div>
+
+<!-- ROULETTE ANIMATION SCREEN -->
+<div id="screen-roulette" class="screen">
+  <div class="revolver-display">🔫</div>
+  <div class="roulette-msg">GIRANDO LA RULETA</div>
+  <div class="roulette-sub">decidiendo tu destino...</div>
+</div>
+
+<!-- SURVIVED SCREEN -->
+<div id="screen-survived" class="screen">
+  <span class="result-icon">🍀</span>
+  <div class="result-title">SOBREVIVISTE</div>
+  <div class="result-msg">
+    La bala no era para ti hoy.<br/>
+    <strong>5 balas vacías de 6.</strong><br/><br/>
+    El servidor canceló el cron job.<br/>
+    Mañana podrías no tener tanta suerte.
+  </div>
+  <button class="btn-reset" onclick="goHome()">↩ VOLVER A CONFIGURAR</button>
+</div>
+
+<!-- DEAD SCREEN -->
+<div id="screen-dead" class="screen">
+  <span class="result-icon">💀</span>
+  <div class="result-title">GAME OVER</div>
+  <div class="result-msg">
+    La cámara tenía bala.<br/>
+    <strong>La consecuencia fue ejecutada.</strong><br/>
+    No había vuelta atrás.
+  </div>
+  <div class="consequence-box" id="consequence-detail">
+    <div class="consequence-title">// EJECUTADO //</div>
+    <div class="consequence-text" id="consequence-text">—</div>
+  </div>
+  <button class="btn-reset" onclick="goHome()">↩ INTENTAR DE NUEVO</button>
+</div>
+
+<div class="api-status demo" id="api-status">
+  MODO DEMO<br/>
+  backend: localhost:3000
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+const BACKEND_URL = 'http://localhost:3000'; // Cambiar a URL del servidor
+
+let state = {
+  alarmTime: '07:00',
+  selectedThreat: 'email',
+  alarmId: null,
+  countdownInterval: null,
+  puzzleInterval: null,
+  puzzle: { a: 0, b: 0, answer: 0 },
+  puzzleTimeLeft: 30,
+  demoMode: true, // true = no llama al backend real
+};
+
+// ══════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════
+// HOME LOGIC
+// ══════════════════════════════════════════════════════
+document.getElementById('alarm-time').addEventListener('change', function() {
+  state.alarmTime = this.value;
+  updateNextAlarmDisplay();
+});
+
+function updateNextAlarmDisplay() {
+  const [h, m] = state.alarmTime.split(':');
+  const next = new Date();
+  next.setHours(parseInt(h), parseInt(m) + 1, 0, 0);
+  if (next <= new Date()) next.setDate(next.getDate() + 1);
+
+  const label = document.getElementById('next-alarm-display');
+  label.textContent = `mañana a las ${state.alarmTime} (gatillo: ${String(next.getHours()).padStart(2,'0')}:${String(next.getMinutes()).padStart(2,'0')})`;
+
+  // Animate threat fill based on how soon alarm is
+  const now = new Date();
+  const alarm = new Date();
+  alarm.setHours(parseInt(h), parseInt(m), 0, 0);
+  if (alarm <= now) alarm.setDate(alarm.getDate() + 1);
+  const msUntil = alarm - now;
+  const maxMs = 24 * 60 * 60 * 1000;
+  const fill = Math.round((1 - msUntil / maxMs) * 100);
+  document.getElementById('threat-fill').style.width = `${Math.max(5, fill)}%`;
+}
+
+function selectThreat(card) {
+  document.querySelectorAll('.threat-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.threat-check').textContent = '';
+  });
+  card.classList.add('selected');
+  card.querySelector('.threat-check').textContent = '✓';
+  state.selectedThreat = card.dataset.threat;
+
+  const emailConfig = document.getElementById('email-config');
+  const twitterConfig = document.getElementById('twitter-config');
+
+  if (state.selectedThreat === 'email') {
+    emailConfig.style.display = 'block';
+    twitterConfig.style.display = 'none';
+  } else if (state.selectedThreat === 'twitter') {
+    emailConfig.style.display = 'none';
+    twitterConfig.style.display = 'block';
+  } else { // both
+    emailConfig.style.display = 'block';
+    twitterConfig.style.display = 'block';
+  }
+}
+
+async function armAlarm() {
+  state.alarmTime = document.getElementById('alarm-time').value || '07:00';
+  state.alarmId = 'alarm_' + Date.now();
+
+  const config = {
+    userName: document.getElementById('user-name').value || 'Usuario Anónimo',
+    bossEmail: document.getElementById('boss-email').value || 'jefe@empresa.cl',
+    bossName: document.getElementById('boss-name').value || 'Sr. Jefe',
+    companyName: document.getElementById('company-name').value || 'La Empresa',
+    searchHistory: (document.getElementById('search-history').value || '')
+      .split('\n').filter(s => s.trim()),
+  };
+
+  // Actualizar summary
+  const [h, m] = state.alarmTime.split(':');
+  const triggerMin = parseInt(m) + 1;
+  const triggerHour = parseInt(h) + (triggerMin >= 60 ? 1 : 0);
+  const triggerMinFinal = triggerMin >= 60 ? triggerMin - 60 : triggerMin;
+  const triggerTime = `${String(triggerHour).padStart(2,'0')}:${String(triggerMinFinal).padStart(2,'0')}`;
+
+  document.getElementById('summary-alarm-time').textContent = state.alarmTime;
+  document.getElementById('summary-trigger-time').textContent = triggerTime;
+  document.getElementById('summary-threat').textContent = {
+    email: 'CORREO AL JEFE',
+    twitter: 'TWITTER NUCLEAR',
+    both: 'MODO KAMIKAZE ☠️'
+  }[state.selectedThreat];
+
+  // Llamada al backend (o modo demo)
+  if (!state.demoMode) {
+    try {
+      const resp = await fetch(`${BACKEND_URL}/alarm/set`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alarmId: state.alarmId,
+          userId: 'user_demo',
+          alarmTime: state.alarmTime,
+          triggerMinutes: 1,
+          config,
+        }),
+      });
+      const data = await resp.json();
+      if (!data.success) throw new Error('Backend error');
+      document.getElementById('api-status').className = 'api-status connected';
+      document.getElementById('api-status').textContent = `BACKEND: CONECTADO\n${data.triggerTime}`;
+    } catch (e) {
+      // Fallback a demo
+      state.demoMode = true;
+    }
+  }
+
+  // Guardar config para demo
+  state.config = config;
+
+  showScreen('screen-armed');
+  startCountdown();
+}
+
+// ══════════════════════════════════════════════════════
+// COUNTDOWN (ARMED SCREEN)
+// ══════════════════════════════════════════════════════
+function startCountdown() {
+  if (state.countdownInterval) clearInterval(state.countdownInterval);
+
+  // Para el demo: activar alarma en 10 segundos
+  const [h, m] = state.alarmTime.split(':');
+  let targetTime = new Date();
+  targetTime.setHours(parseInt(h), parseInt(m), 0, 0);
+  if (targetTime <= new Date()) targetTime.setDate(targetTime.getDate() + 1);
+
+  // DEMO: Override a 15s para poder probar la experiencia completa
+  const DEMO_SECONDS = 15;
+  let demoCountdown = DEMO_SECONDS;
+  let isDemo = true; // Always demo in this artifact
+
+  state.countdownInterval = setInterval(() => {
+    if (isDemo) {
+      demoCountdown--;
+      const mins = Math.floor(demoCountdown / 60);
+      const secs = demoCountdown % 60;
+      document.getElementById('armed-countdown').textContent =
+        `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+      if (demoCountdown <= 0) {
+        clearInterval(state.countdownInterval);
+        triggerAlarm();
+      }
+    }
+  }, 1000);
+}
+
+function showDisarmConfirm() {
+  if (confirm('¿Seguro que quieres cancelar? (esto es de cobardes)')) {
+    clearInterval(state.countdownInterval);
+    clearInterval(state.puzzleInterval);
+    goHome();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ALARM FIRING
+// ══════════════════════════════════════════════════════
+function triggerAlarm() {
+  // Generate puzzle
+  const a = Math.floor(Math.random() * 50) + 10;
+  const b = Math.floor(Math.random() * 50) + 10;
+  const ops = ['+', '−', '×'];
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  let answer;
+  if (op === '+') answer = a + b;
+  else if (op === '−') answer = a - b;
+  else answer = a * b;
+
+  state.puzzle = { a, b, op, answer };
+  state.puzzleTimeLeft = 30;
+
+  document.getElementById('math-problem').textContent = `${a} ${op} ${b} = ?`;
+  document.getElementById('puzzle-answer').value = '';
+  document.getElementById('puzzle-answer').className = 'puzzle-input';
+  document.getElementById('alarm-current-time').textContent = state.alarmTime;
+  document.getElementById('solve-timer').textContent = '30';
+
+  showScreen('screen-alarm');
+
+  // Vibrate if available
+  if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+
+  // Puzzle countdown
+  state.puzzleInterval = setInterval(() => {
+    state.puzzleTimeLeft--;
+    document.getElementById('puzzle-timer').textContent =
+      `⚠ ${state.puzzleTimeLeft} SEGUNDOS RESTANTES`;
+    document.getElementById('solve-timer').textContent = state.puzzleTimeLeft;
+
+    if (state.puzzleTimeLeft <= 0) {
+      clearInterval(state.puzzleInterval);
+      // Time's up! Spin the roulette
+      spinRoulette();
+    }
+  }, 1000);
+}
+
+function checkAnswer() {
+  const val = parseInt(document.getElementById('puzzle-answer').value);
+  if (isNaN(val)) return;
+
+  if (val === state.puzzle.answer) {
+    clearInterval(state.puzzleInterval);
+    document.getElementById('puzzle-answer').className = 'puzzle-input success';
+
+    // Cancel on backend
+    cancelOnBackend();
+
+    setTimeout(() => {
+      showScreen('screen-survived');
+    }, 800);
+  } else if (document.getElementById('puzzle-answer').value.length > 0) {
+    document.getElementById('puzzle-answer').className = 'puzzle-input error';
+    setTimeout(() => {
+      document.getElementById('puzzle-answer').className = 'puzzle-input';
+    }, 500);
+  }
+}
+
+async function cancelOnBackend() {
+  if (!state.demoMode && state.alarmId) {
+    try {
+      await fetch(`${BACKEND_URL}/alarm/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alarmId: state.alarmId }),
+      });
+    } catch(e) { /* Demo fallback */ }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// ROULETTE
+// ══════════════════════════════════════════════════════
+function spinRoulette() {
+  showScreen('screen-roulette');
+
+  setTimeout(() => {
+    // 1 en 6
+    const roll = Math.floor(Math.random() * 6);
+    const died = roll === 0;
+
+    if (died) {
+      // Mostrar consecuencia
+      const consequences = {
+        email: `Correo de renuncia enviado a ${(state.config && state.config.bossEmail) || 'tu jefe'}.\nAsunto: "Renuncio" — firmado: ${(state.config && state.config.userName) || 'tú'}.\nSendGrid API: 200 OK ✓`,
+        twitter: `Tweet publicado en @${(state.config && state.config.userName) || 'tuCuenta'}:\n"Historial de búsqueda revelado. No me desperté a tiempo. #RuletaRusaAlarm"`,
+        both: `1. Correo al jefe: ENVIADO ✓\n2. Twitter: PUBLICADO ✓\nDoble consecuencia ejecutada.\nBuena suerte con el lunes.`,
+      };
+
+      document.getElementById('consequence-text').textContent =
+        consequences[state.selectedThreat] || consequences.email;
+
+      showScreen('screen-dead');
+    } else {
+      showScreen('screen-survived');
+    }
+  }, 3000);
+}
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function goHome() {
+  clearInterval(state.countdownInterval);
+  clearInterval(state.puzzleInterval);
+  state.alarmId = null;
+  showScreen('screen-home');
+}
+
+// Init
+updateNextAlarmDisplay();
+</script>
+</body>
+</html>
